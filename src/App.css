@@ -36,3 +36,27 @@
     transform: rotate(360deg);
   }
 }
+
+.bgImage {
+  background: url(./assets/pokemonbg3.jpg) repeat center center fixed;
+  /* height: 145vh;
+  width: 192vh; */
+  min-height: 100vh;
+
+
+}
+
+.favHeart {
+  background-image: url(./assets/Heart.png);
+  background-color: rgba(255, 255, 255, 0);
+}
+
+.favHeartBtn {
+  width: 55px;
+  height: 55px;
+}
+
+.pokeImg {
+  width: 800px;
+  height: 100%;
+}
