@@ -10,8 +10,12 @@ import { useState } from "react";
 import { getLocalStorage, removeFromLocalStorage } from "./PokegoComponent";
 import { Ipokemon } from "../Interfaces/Interfaces";
 
+interface DrawerProps {
+  isFav: boolean,
+  onPokeSelect: (pokemon: Ipokemon) => void; // Define onPokemonSelect prop
+}
 
-export function DrawerComponent() {
+export function DrawerComponent({ isFav, onPokeSelect }: DrawerProps) {
   const [open, setOpen] = React.useState(false);
 
   const openDrawer = () => setOpen(true);
@@ -19,14 +23,27 @@ export function DrawerComponent() {
 
   // call local storage function in here and display it
 
-  const [favPokemon, setFavPokemon] = useState<{ id: number, name: string }[]>([]);
+  const [favPokemon, setFavPokemon] = useState<Ipokemon[]>([]);
+  const [selectedPokemon, setSelectedPokemon] = useState<Ipokemon | null>(null);
+
 
   useEffect(() => {
     const favorites = getLocalStorage();
     console.log("Favorites", favorites)
     setFavPokemon(favorites);
-  }, [])
+  }, [isFav])
+  
 
+  const handleRemove = (id: number) => {
+    removeFromLocalStorage(id);
+    const updatedFavPokemon = favPokemon.filter(p => p.id !== id);
+    setFavPokemon(updatedFavPokemon);
+}
+
+const handlePokemonSelect = (pokemon: Ipokemon) => {
+  onPokeSelect(pokemon);
+  closeDrawer();
+};
 
   return (
     <>
@@ -57,14 +74,19 @@ export function DrawerComponent() {
         <div>
 
           <div>
-            {favPokemon.map((pokemon, index) => (
-              <div className="bg-white font-mainFont text-lg" key={index}>
-                <div className="flex justify-evenly font-bold">
-                  <span>{pokemon.id}</span>
-                  <span>{pokemon.name}</span>
-                  {/* <button onClick={() => removeFromLocalStorage(pokemon)}> - </button> */}
+            {favPokemon && favPokemon.map((pokemon, index) => (
+              <div onClick={() => handlePokemonSelect(pokemon)} className="my-2">
+              <div className="bg-white font-mainFont text-xl py-2 px-5 rounded-lg drop-shadow-md" key={index}>
+                <div className="flex justify-between font-bold">
+                  <span className="text-center">#{pokemon ? pokemon.id : 'N/A'}</span>
+                  <span className="text-center"> {pokemon ? pokemon.name : 'N/A'}</span>
+                  <span>
+                    <button onClick={() => handleRemove(pokemon.id)} className="hover:bg-blue-gray-100 rounded-lg w-10">
+                      x
+                    </button>
+                  </span>
                 </div>
-
+              </div>
               </div>
             ))}
 

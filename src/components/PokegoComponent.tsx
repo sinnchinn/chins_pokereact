@@ -4,6 +4,10 @@ import { DrawerComponent } from "./DrawerComponent";
 import { Ievolutionchain, Ilocationarea, Ipokemon } from "../Interfaces/Interfaces";
 import { pokeLocation } from "../DataServices/DataServices";
 
+interface pokeFace {
+    id: number,
+    name:string
+}
 export const PokegoComponent = () => {
 
     const [pokemon, setPokemon] = useState<Ipokemon>();
@@ -12,7 +16,33 @@ export const PokegoComponent = () => {
     const [pokeSearch, setPokeSearch] = useState<string>("");
     const [pokeOrig, setPokeOrig] = useState(false);
     const [pokeShiny, setPokeShiny] = useState(false);
-    
+    const [isFav, setIsFave] = useState<boolean>(false);
+    const[, toggleFav] = useState<boolean>(false);
+    const [selectedPokemon, setSelectedPokemon] = useState<Ipokemon | null>(null);
+
+
+    useEffect(() => {
+
+        const pikachu = async () => {
+            const pikachu = await pokemonApi("pikachu")
+            setPokemon(pikachu);
+
+            const findHere = await pokeLocation(pikachu.location_area_encounters)
+            setPokeLoca(findHere);
+
+            const species = await pokeSpecies(pikachu.species.url)
+            const evolution = await pokeEvolve(species.evolution_chain.url)
+            setPokeEvo([evolution])
+        }
+        pikachu();
+    }, [])
+
+    useEffect(() => {
+        const favorites = getLocalStorage();
+        if (pokemon) {
+            setIsFave(favorites.some((fav: { id: number; name: string }) => fav.id === pokemon.id));
+        }
+    }, [pokemon]);
 
     const handleData = async (fetchedData: Ipokemon) => {
 
@@ -58,7 +88,6 @@ export const PokegoComponent = () => {
 
         }
     }
-
 
     const getEvoChain = () => {
         if (pokeEvo.length == 0) {
@@ -108,8 +137,24 @@ export const PokegoComponent = () => {
     }
 
     const handleFavHeart = (pokemon: Ipokemon) => {
-        saveToLocalStorage(pokemon);
+        if (pokemon) {
+            const pokeId = pokemon.id
+            if (isFav) {
+                removeFromLocalStorage(pokeId); 
+            } else {
+                saveToLocalStorage(pokemon);
+            }
+            setIsFave(prevIsFav => !prevIsFav); // Toggle favorite status
+            console.log("isFav after toggle:", !isFav);
+            console.log("setIsFave called");
+        }
     }
+
+    
+    const handlePokeSelect = (pokemon: Ipokemon | null) => {
+        setSelectedPokemon(pokemon);
+      };
+
 
     const saveToLocalStorage = (pokemon: Ipokemon) => {
         let favorites = getLocalStorage();
@@ -141,7 +186,7 @@ export const PokegoComponent = () => {
                 <button onClick={handleRandom} type="button" className="text-white font-mainFont bg-randomBtn hover:bg-randomBtnHover text-3xl font-bold rounded-2xl px-5 py-2.5 m-1"> random
                 </button>
 
-                <DrawerComponent />
+                <DrawerComponent isFav={isFav} onPokeSelect={handlePokeSelect}/>
 
                 <div className="hidden lg:block"></div>
                 <div className="hidden lg:block"></div>
@@ -173,11 +218,14 @@ export const PokegoComponent = () => {
 
                         {/* FAVORITE BUTTON */}
                         <div className="flex justify-end">
-                            <button onClick={() => pokemon && handleFavHeart(pokemon)} className="favHeart favHeartBtn">
+                        <button onClick={() => pokemon && handleFavHeart(pokemon)} className="favHeart favHeartBtn">
+                                {isFav ? <img src={require("../assets/filledheart.png")} alt="filled heart" /> : <img src={require("../assets/Heart.png")} alt="empty heart" />}
                             </button>
                         </div>
 
                         <div></div>
+
+                        
 
 
 
@@ -267,17 +315,15 @@ export const getLocalStorage = () => {
     return JSON.parse(localStorageData)
 }
 
-export const removeFromLocalStorage = (pokemon: Ipokemon) => {
+export const removeFromLocalStorage = (id: number) => {
     let favorites = getLocalStorage();
-
-    const pokeName = pokemon;
-
-
-    let namedIndex = favorites.indexOf(pokeName);
-
-    favorites.splice(namedIndex, 1);
-
-    localStorage.setItem("Favorites", JSON.stringify(favorites));
+    
+    const index = favorites.findIndex((pokemon: Ipokemon) => pokemon.id === id);
+    if (index !== -1) {
+        favorites.splice(index, 1);
+        localStorage.setItem("Favorites", JSON.stringify(favorites));
+    }
+    
 }
 
 export default PokegoComponent;
